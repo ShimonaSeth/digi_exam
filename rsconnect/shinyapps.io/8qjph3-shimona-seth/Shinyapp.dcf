@@ -1,0 +1,13 @@
+name: Shinyapp
+title:
+username: 8qjph3-shimona-seth
+account: 8qjph3-shimona-seth
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 10978550
+bundleId: 8226102
+url: https://8qjph3-shimona-seth.shinyapps.io/Shinyapp/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: .RData|README.md|shell.nix.rtf

@@ -17,7 +17,6 @@ library(DT)
 # Load the data
 data <- read.csv("adverse_events.csv")
 
-
 # Check the structure of the data
 str(data)
 
@@ -47,7 +46,7 @@ total_count_data <- data %>%
   group_by(Year) %>%
   summarise(total_count = sum(Count))
 
-# Create a visually appealing line plot for the total count over the years
+# Create a line plot for the total count over the years
 ggplot(total_count_data, aes(x = Year, y = total_count)) +
   geom_line(color = "#0072B2", linewidth = 1.5) +
   geom_point(color = "#0072B2", size = 3) +
@@ -131,25 +130,25 @@ plotly_ObsRate <- ggplotly(plot_ObsRate, tooltip = c("PSIDescription", "ObsRate"
 # Print the interactive plot
 print(plotly_ObsRate)
 
-# Graph for average ObsRate
+# Group by Year and calculate the average ObsRate for Statewide
 agg_data <- data %>%
+  filter(County == "STATEWIDE") %>%
   group_by(Year) %>%
   summarise(avg_ObsRate = mean(ObsRate, na.rm = TRUE))
 
-# Convert Year to integer without decimals
-agg_data$Year <- as.integer(agg_data$Year)
+# Convert Year to numeric without decimals
+agg_data$Year <- round(agg_data$Year)
 
 # Create a line plot for the average ObsRate over the years
 ggplot(agg_data, aes(x = Year, y = avg_ObsRate)) +
-  geom_line(color = "#0072B2", linewidth = 1.5) +
-  labs(title = "Adverse Event Timeline : Statewide",
+  geom_line(color = "#0072B2", size = 1.5) +
+  geom_point(color = "#0072B2", size = 3) +
+  labs(title = "Adverse Events Trend in Statewide",
        x = "Year",
-       y = "Count per 100,000") +  
+       y = "Counts per 100,000 population") +  
+  scale_y_continuous(breaks = y_breaks) +  
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.border = element_blank(),
         axis.line = element_line(color = "black"),
         plot.title = element_text(hjust = 0.5, size = 18, face = "bold"),
         axis.title = element_text(size = 14, face = "bold"))

@@ -82,7 +82,7 @@ ggplot(county_summary, aes(x = reorder(County, -total_count), y = total_count, f
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
         axis.line = element_line(color = "black"),
-        panel.grid.major.y = element_line(color = "darkgray"),
+        panel.grid.major.y = element_line(color = "lightgray", linetype = "dotted"),
         panel.border = element_blank(),
         legend.position = "none",
         plot.title = element_text(hjust = 0.5, size = 18, face = "bold"),
@@ -138,11 +138,7 @@ agg_data <- data %>%
   summarise(avg_ObsRate = mean(ObsRate, na.rm = TRUE))
 
 # Convert Year to integer without decimals
-agg_data$Year <- round(agg_data$Year)
-agg_data$Year <- as.integer(agg_data$Year)
-
-# Calculate y-axis breaks
-y_breaks <- pretty(range(agg_data$avg_ObsRate), n = 5)
+agg_data$Year <- as.integer(round(agg_data$Year))
 
 # Create a line plot for the average ObsRate over the years
 ggplot(agg_data, aes(x = Year, y = avg_ObsRate)) +
@@ -152,12 +148,15 @@ ggplot(agg_data, aes(x = Year, y = avg_ObsRate)) +
        x = "Year",
        y = "Counts per 100,000 population") +
   scale_x_continuous(breaks = seq(min(agg_data$Year), max(agg_data$Year), by = 1)) +
-  scale_y_continuous(breaks = y_breaks) +  
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        axis.line = element_line(color = "black"),
-        plot.title = element_text(hjust = 0.5, size = 18, face = "bold"),
-        axis.title = element_text(size = 14, face = "bold"))
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.line = element_line(color = "black"),
+    plot.title = element_text(hjust = 0.5, size = 18, face = "bold"),
+    axis.title = element_text(size = 14, face = "bold"),
+    panel.grid.major = element_line(color = "lightgray", linetype = "dotted"),
+    panel.grid.minor = element_blank()
+  )
 
 # Calculate the total ObsRate for each PSIDescription
 psi_summary <- data %>%

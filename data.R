@@ -51,6 +51,7 @@ ggplot(total_count_data, aes(x = Year, y = total_count)) +
   geom_line(color = "#0072B2", linewidth = 1.5) +
   geom_point(color = "#0072B2", size = 3) +
   labs(title = "Total Count Trend Over the Years", y = "Total Count", x = "Year") +
+  scale_x_continuous(breaks = seq(min(total_count_data$Year), max(total_count_data$Year), by = 1)) +
   theme_minimal() +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1),
@@ -136,8 +137,12 @@ agg_data <- data %>%
   group_by(Year) %>%
   summarise(avg_ObsRate = mean(ObsRate, na.rm = TRUE))
 
-# Convert Year to numeric without decimals
+# Convert Year to integer without decimals
 agg_data$Year <- round(agg_data$Year)
+agg_data$Year <- as.integer(agg_data$Year)
+
+# Calculate y-axis breaks
+y_breaks <- pretty(range(agg_data$avg_ObsRate), n = 5)
 
 # Create a line plot for the average ObsRate over the years
 ggplot(agg_data, aes(x = Year, y = avg_ObsRate)) +
@@ -145,7 +150,8 @@ ggplot(agg_data, aes(x = Year, y = avg_ObsRate)) +
   geom_point(color = "#0072B2", size = 3) +
   labs(title = "Adverse Events Trend in Statewide",
        x = "Year",
-       y = "Counts per 100,000 population") +  
+       y = "Counts per 100,000 population") +
+  scale_x_continuous(breaks = seq(min(agg_data$Year), max(agg_data$Year), by = 1)) +
   scale_y_continuous(breaks = y_breaks) +  
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
@@ -162,18 +168,22 @@ psi_summary <- data %>%
 # Calculate the percentage of ObsRate for each PSIDescription
 psi_summary$percentage <- psi_summary$total_obs_rate / sum(psi_summary$total_obs_rate) * 100
 
-# Create shades of blue color palette
-blue_palette <- colorRampPalette(rev(brewer.pal(9, "Blues")))(length(psi_summary$PSIDescription))
+# Create a data frame for plotly
+pie_data <- data.frame(
+  Category = psi_summary$PSIDescription,
+  Value = psi_summary$percentage
+)
 
-# Create a pie chart with shades of blue
-plot_pie <- plot_ly(psi_summary, labels = ~paste(PSIDescription, "<br>", round(percentage, 2), "%"), 
-                    values = ~percentage, type = "pie", textposition = "outside",
-                    hoverinfo = "label+value", marker = list(colors = blue_palette))
+# Define a custom color palette with colorful shades
+color_palette <- c("#FF6F61", "#6B5B95", "#88B04B", "#F7CAC9", "#92A8D1", "#955251", "#B565A7", "#009B77", "#DD4124", "#D65076")
 
-# Add legend
-plot_pie <- plot_pie %>% layout(showlegend = TRUE)
+plot_pie <- plot_ly(pie_data, labels = ~Category, values = ~Value, type = "pie", marker = list(colors = color_palette)) %>%
+  layout(title = "Distribution of Categories",
+         font = list(size = 14, family = "Arial"),
+         hoverlabel = list(bgcolor = "white", font = list(size = 14)),
+         legend = list(orientation = "h", x = 0.5, y = -0.1))
 
-# Display the plot
+# Show the interactive pie chart
 plot_pie
 
 # Filter data for Lake County
@@ -187,40 +197,40 @@ statewide_data <- data %>%
 # Group by Year and calculate the average ObsRate for Lake County
 avg_obsrate_lake_county <- lake_county_data %>%
   group_by(Year) %>%
-  summarise(avg_ObsRate = mean(ObsRate, na.rm = TRUE))
+  summarise(avg_ObsRate = mean(ObsRate, na.rm = TRUE)) %>%
+  mutate(County = "Lake")  # Adding the county name
 
 # Group by Year and calculate the average ObsRate for Statewide
 avg_obsrate_statewide <- statewide_data %>%
   group_by(Year) %>%
-  summarise(avg_ObsRate = mean(ObsRate, na.rm = TRUE))
+  summarise(avg_ObsRate = mean(ObsRate, na.rm = TRUE)) %>%
+  mutate(County = "STATEWIDE")  # Adding the county name
 
 # Combine the dataframes
-combined_data <- bind_rows(avg_obsrate_lake_county, avg_obsrate_statewide, .id = "County")
+combined_data <- bind_rows(avg_obsrate_lake_county, avg_obsrate_statewide)
 
 # Convert Year to numeric
 combined_data$Year <- as.numeric(combined_data$Year)
 
-# Create line plot for both Lake County and Statewide ObsRate over the years
+# Create comparison plot for both Lake County and Statewide ObsRate over the years
 plot_comparison <- ggplot(combined_data, aes(x = Year, y = avg_ObsRate, color = County)) +
-  geom_line() +
-  geom_point() +
+  geom_line(size = 1.5) +
+  geom_point(size = 3) +
   labs(title = "Comparison of Observed Rates: Lake County vs. Statewide", y = "Adverse Event Observed Rate (per 100,000)", x = "Year") +
   scale_color_manual(values = c("Lake" = "#0072B2", "STATEWIDE" = "#FF5733"), name = "County") +
   theme_minimal() +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1),
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank(),
-    panel.border = element_blank(),
     axis.line = element_line(color = "black"),
     plot.title = element_text(hjust = 0.5, size = 18, face = "bold"),
-    axis.title = element_text(size = 14, face = "bold")
+    axis.title = element_text(size = 14, face = "bold"),
+    panel.grid.major = element_line(color = "lightgray", linetype = "dotted"),
+    panel.grid.minor = element_blank(),
+    legend.position = "bottom",
+    legend.title = element_text(size = 12, face = "bold"),
+    legend.text = element_text(size = 10)
   ) +
-  scale_x_continuous(breaks = seq(min(combined_data$Year), max(combined_data$Year), by = 1)) +
-  geom_segment(data = combined_data, aes(x = Year[1], xend = Year[1], y = avg_ObsRate[1], yend = avg_ObsRate[1] + 10), color = "#0072B2", arrow = arrow(length = unit(0.3, "inches")), size = 0.5) +
-  geom_text(data = combined_data, aes(x = Year[1], y = avg_ObsRate[1] + 15, label = "Lake County"), hjust = 0, vjust = 0, color = "#0072B2", size = 5) +
-  geom_segment(data = combined_data, aes(x = Year[22], xend = Year[22], y = avg_ObsRate[22], yend = avg_ObsRate[22] + 10), color = "#FF5733", arrow = arrow(length = unit(0.3, "inches")), size = 0.5) +
-  geom_text(data = combined_data, aes(x = Year[22], y = avg_ObsRate[22] + 15, label = "Statewide"), hjust = 1, vjust = 0, color = "#FF5733", size = 5)
+  scale_x_continuous(breaks = seq(min(combined_data$Year), max(combined_data$Year), by = 1))
 
 # Show the comparison plot
 plot_comparison
